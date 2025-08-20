@@ -3,7 +3,7 @@ using ProspectFinderPro.DataIngestion.Models;
 
 namespace ProspectFinderPro.DataIngestion.Services;
 
-public class CompanyFactsApiClient
+public class AvoinDataApiClient
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<AvoinDataApiClient> _logger;
