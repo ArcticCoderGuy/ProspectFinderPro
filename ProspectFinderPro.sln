@@ -1,0 +1,67 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Services", "Services", "{A7A5B7A3-8B4A-11D0-8D11-00A0C91BC942}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shared", "Shared", "{B8B5C7C4-8B4A-11D0-8D11-00A0C91BC942}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ProspectFinderPro.DataIngestion", "src\Services\ProspectFinderPro.DataIngestion\ProspectFinderPro.DataIngestion.csproj", "{1A1B2C3D-4E5F-6789-ABCD-EF0123456789}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ProspectFinderPro.BusinessIntelligence", "src\Services\ProspectFinderPro.BusinessIntelligence\ProspectFinderPro.BusinessIntelligence.csproj", "{2B2C3D4E-5F67-89AB-CDEF-0123456789AB}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ProspectFinderPro.ApiGateway", "src\Services\ProspectFinderPro.ApiGateway\ProspectFinderPro.ApiGateway.csproj", "{3C3D4E5F-6789-ABCD-EF01-23456789ABCD}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ProspectFinderPro.WebApp", "src\Services\ProspectFinderPro.WebApp\ProspectFinderPro.WebApp.csproj", "{4D4E5F67-89AB-CDEF-0123-456789ABCDEF}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ProspectFinderPro.Notifications", "src\Services\ProspectFinderPro.Notifications\ProspectFinderPro.Notifications.csproj", "{5E5F6789-ABCD-EF01-2345-6789ABCDEF01}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ProspectFinderPro.Shared", "src\Shared\ProspectFinderPro.Shared\ProspectFinderPro.Shared.csproj", "{6F67891A-BCDE-F012-3456-789ABCDEF012}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1A1B2C3D-4E5F-6789-ABCD-EF0123456789}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1A1B2C3D-4E5F-6789-ABCD-EF0123456789}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1A1B2C3D-4E5F-6789-ABCD-EF0123456789}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1A1B2C3D-4E5F-6789-ABCD-EF0123456789}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2B2C3D4E-5F67-89AB-CDEF-0123456789AB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2B2C3D4E-5F67-89AB-CDEF-0123456789AB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2B2C3D4E-5F67-89AB-CDEF-0123456789AB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2B2C3D4E-5F67-89AB-CDEF-0123456789AB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3C3D4E5F-6789-ABCD-EF01-23456789ABCD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3C3D4E5F-6789-ABCD-EF01-23456789ABCD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3C3D4E5F-6789-ABCD-EF01-23456789ABCD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3C3D4E5F-6789-ABCD-EF01-23456789ABCD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4D4E5F67-89AB-CDEF-0123-456789ABCDEF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4D4E5F67-89AB-CDEF-0123-456789ABCDEF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4D4E5F67-89AB-CDEF-0123-456789ABCDEF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4D4E5F67-89AB-CDEF-0123-456789ABCDEF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5E5F6789-ABCD-EF01-2345-6789ABCDEF01}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5E5F6789-ABCD-EF01-2345-6789ABCDEF01}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5E5F6789-ABCD-EF01-2345-6789ABCDEF01}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5E5F6789-ABCD-EF01-2345-6789ABCDEF01}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6F67891A-BCDE-F012-3456-789ABCDEF012}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6F67891A-BCDE-F012-3456-789ABCDEF012}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6F67891A-BCDE-F012-3456-789ABCDEF012}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6F67891A-BCDE-F012-3456-789ABCDEF012}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{A7A5B7A3-8B4A-11D0-8D11-00A0C91BC942} = {8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}
+		{B8B5C7C4-8B4A-11D0-8D11-00A0C91BC942} = {8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}
+		{1A1B2C3D-4E5F-6789-ABCD-EF0123456789} = {A7A5B7A3-8B4A-11D0-8D11-00A0C91BC942}
+		{2B2C3D4E-5F67-89AB-CDEF-0123456789AB} = {A7A5B7A3-8B4A-11D0-8D11-00A0C91BC942}
+		{3C3D4E5F-6789-ABCD-EF01-23456789ABCD} = {A7A5B7A3-8B4A-11D0-8D11-00A0C91BC942}
+		{4D4E5F67-89AB-CDEF-0123-456789ABCDEF} = {A7A5B7A3-8B4A-11D0-8D11-00A0C91BC942}
+		{5E5F6789-ABCD-EF01-2345-6789ABCDEF01} = {A7A5B7A3-8B4A-11D0-8D11-00A0C91BC942}
+		{6F67891A-BCDE-F012-3456-789ABCDEF012} = {B8B5C7C4-8B4A-11D0-8D11-00A0C91BC942}
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,113 @@
+version: '3.8'
+
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: prospectfinder-sqlserver
+    environment:
+      ACCEPT_EULA: "Y"
+      SA_PASSWORD: "ProspectFinder2024!"
+      MSSQL_PID: Express
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    networks:
+      - prospectfinder-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: prospectfinder-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - prospectfinder-network
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: src/Services/ProspectFinderPro.ApiGateway/Dockerfile
+    container_name: prospectfinder-api-gateway
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=ProspectFinderPro;User Id=sa;Password=ProspectFinder2024!;TrustServerCertificate=true
+      - Redis__ConnectionString=prospectfinder-redis:6379
+    ports:
+      - "5000:8080"
+    depends_on:
+      - sqlserver
+      - redis
+    networks:
+      - prospectfinder-network
+
+  data-ingestion:
+    build:
+      context: .
+      dockerfile: src/Services/ProspectFinderPro.DataIngestion/Dockerfile
+    container_name: prospectfinder-data-ingestion
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=ProspectFinderPro;User Id=sa;Password=ProspectFinder2024!;TrustServerCertificate=true
+      - AvoinDataApi__BaseUrl=https://avoindata.fi/data/fi/api/3/action/
+      - PrhApi__BaseUrl=https://avoindata.fi/data/fi/api/3/action/
+    depends_on:
+      - sqlserver
+      - redis
+    networks:
+      - prospectfinder-network
+
+  business-intelligence:
+    build:
+      context: .
+      dockerfile: src/Services/ProspectFinderPro.BusinessIntelligence/Dockerfile
+    container_name: prospectfinder-business-intelligence
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=ProspectFinderPro;User Id=sa;Password=ProspectFinder2024!;TrustServerCertificate=true
+      - Redis__ConnectionString=prospectfinder-redis:6379
+    depends_on:
+      - sqlserver
+      - redis
+    networks:
+      - prospectfinder-network
+
+  webapp:
+    build:
+      context: .
+      dockerfile: src/Services/ProspectFinderPro.WebApp/Dockerfile
+    container_name: prospectfinder-webapp
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ApiGateway__BaseUrl=http://api-gateway:8080
+    ports:
+      - "5001:8080"
+    depends_on:
+      - api-gateway
+    networks:
+      - prospectfinder-network
+
+  notifications:
+    build:
+      context: .
+      dockerfile: src/Services/ProspectFinderPro.Notifications/Dockerfile
+    container_name: prospectfinder-notifications
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=ProspectFinderPro;User Id=sa;Password=ProspectFinder2024!;TrustServerCertificate=true
+      - EmailSettings__SmtpHost=smtp.gmail.com
+      - EmailSettings__SmtpPort=587
+    depends_on:
+      - sqlserver
+    networks:
+      - prospectfinder-network
+
+volumes:
+  sqlserver_data:
+  redis_data:
+
+networks:
+  prospectfinder-network:
+    driver: bridge

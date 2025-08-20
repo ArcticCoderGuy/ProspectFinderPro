@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProspectFinder Pro - Testiympäristö</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50, #3498db);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .search-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border-left: 5px solid #3498db;
+        }
+
+        .search-form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #2c3e50;
+        }
+
+        .form-group input, .form-group select {
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #95a5a6, #7f8c8d);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(149, 165, 166, 0.3);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #27ae60, #229954);
+            color: white;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(39, 174, 96, 0.3);
+        }
+
+        .results-section {
+            margin-top: 30px;
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .company-card {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .company-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+
+        .company-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .company-name {
+            font-size: 1.4em;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .company-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #f1f2f6;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #7f8c8d;
+        }
+
+        .info-value {
+            color: #2c3e50;
+            font-weight: 500;
+        }
+
+        .confidence-score {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        .confidence-high {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .confidence-medium {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .confidence-low {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #7f8c8d;
+        }
+
+        .loading::after {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #3498db;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 30px;
+        }
+
+        .pagination button {
+            padding: 8px 12px;
+            border: 1px solid #e9ecef;
+            background: white;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .pagination button:hover {
+            background: #3498db;
+            color: white;
+        }
+
+        .pagination .active {
+            background: #3498db;
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .search-form {
+                grid-template-columns: 1fr;
+            }
+            
+            .company-info {
+                grid-template-columns: 1fr;
+            }
+            
+            .button-group {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 ProspectFinder Pro</h1>
+            <p>B2B Sales Intelligence Platform - Testiympäristö</p>
+        </div>
+
+        <div class="content">
+            <!-- Haku-osio -->
+            <div class="search-section">
+                <h2>🔍 Yrityksen haku</h2>
+                <form id="searchForm" class="search-form">
+                    <div class="form-group">
+                        <label for="minTurnover">Min. liikevaihto (€)</label>
+                        <input type="number" id="minTurnover" placeholder="5000000" step="100000">
+                    </div>
+                    <div class="form-group">
+                        <label for="maxTurnover">Max. liikevaihto (€)</label>
+                        <input type="number" id="maxTurnover" placeholder="10000000" step="100000">
+                    </div>
+                    <div class="form-group">
+                        <label for="hasOwnProducts">Omat tuotteet</label>
+                        <select id="hasOwnProducts">
+                            <option value="">Kaikki</option>
+                            <option value="true">Kyllä</option>
+                            <option value="false">Ei</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="industry">Toimiala</label>
+                        <input type="text" id="industry" placeholder="esim. manufacturing">
+                    </div>
+                    <div class="form-group">
+                        <label for="location">Sijainti</label>
+                        <input type="text" id="location" placeholder="esim. Helsinki">
+                    </div>
+                    <div class="form-group">
+                        <label for="businessId">Y-tunnus (suora haku)</label>
+                        <input type="text" id="businessId" placeholder="1234567-8">
+                    </div>
+                </form>
+
+                <div class="button-group">
+                    <button type="button" class="btn btn-primary" onclick="searchCompanies()">
+                        🔍 Hae yrityksiä
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="clearSearch()">
+                        🗑️ Tyhjennä
+                    </button>
+                    <button type="button" class="btn btn-success" onclick="searchExternal()">
+                        🌐 Hae ulkoisista lähteistä
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tulokset-osio -->
+            <div id="results" class="results-section" style="display: none;">
+                <div class="results-header">
+                    <h2 id="resultsTitle">Hakutulokset</h2>
+                    <div id="resultsStats"></div>
+                </div>
+                <div id="companiesList"></div>
+                <div id="pagination" class="pagination"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000/api'; // Adjust port as needed
+        let currentPage = 1;
+        let totalPages = 1;
+
+        async function searchCompanies(page = 1) {
+            const form = document.getElementById('searchForm');
+            const params = new URLSearchParams();
+
+            // Collect form data
+            const minTurnover = document.getElementById('minTurnover').value;
+            const maxTurnover = document.getElementById('maxTurnover').value;
+            const hasOwnProducts = document.getElementById('hasOwnProducts').value;
+            const industry = document.getElementById('industry').value;
+            const location = document.getElementById('location').value;
+            const businessId = document.getElementById('businessId').value;
+
+            // If business ID is provided, search for specific company
+            if (businessId.trim()) {
+                return await searchSpecificCompany(businessId.trim());
+            }
+
+            // Build query parameters
+            if (minTurnover) params.append('minTurnover', minTurnover);
+            if (maxTurnover) params.append('maxTurnover', maxTurnover);
+            if (hasOwnProducts) params.append('hasOwnProducts', hasOwnProducts);
+            if (industry) params.append('industry', industry);
+            if (location) params.append('location', location);
+            params.append('page', page);
+            params.append('pageSize', '10');
+
+            showLoading();
+
+            try {
+                const response = await fetch(`${API_BASE}/companies/search?${params.toString()}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                displayResults(data);
+                currentPage = page;
+                totalPages = data.totalPages;
+                updatePagination();
+                
+            } catch (error) {
+                showError('Virhe haussa: ' + error.message);
+                console.error('Search error:', error);
+            }
+        }
+
+        async function searchSpecificCompany(businessId) {
+            showLoading();
+
+            try {
+                // First try to find in database
+                const response = await fetch(`${API_BASE}/companies/${businessId}`);
+                
+                if (response.ok) {
+                    const company = await response.json();
+                    displayCompanyDetails(company);
+                } else if (response.status === 404) {
+                    // Try to enrich from external sources
+                    showMessage('Yritystä ei löytynyt tietokannasta. Haetaan ulkoisista lähteistä...', 'info');
+                    await enrichCompany(businessId);
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+            } catch (error) {
+                showError('Virhe yrityksen haussa: ' + error.message);
+                console.error('Company search error:', error);
+            }
+        }
+
+        async function enrichCompany(businessId) {
+            try {
+                const response = await fetch(`${API_BASE}/companies/${businessId}/enrich`, {
+                    method: 'POST'
+                });
+                
+                if (response.ok) {
+                    const company = await response.json();
+                    displayCompanyDetails(company);
+                    showMessage('Yritys lisätty tietokantaan ja rikastettu!', 'success');
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+            } catch (error) {
+                showError('Virhe yrityksen rikastamisessa: ' + error.message);
+                console.error('Enrichment error:', error);
+            }
+        }
+
+        async function searchExternal() {
+            const industry = document.getElementById('industry').value || 'manufacturing';
+            showLoading();
+
+            try {
+                const response = await fetch(`${API_BASE}/companies/external/search?query=${encodeURIComponent(industry)}&limit=20`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const companies = await response.json();
+                displayExternalResults(companies);
+                
+            } catch (error) {
+                showError('Virhe ulkoisten lähteiden haussa: ' + error.message);
+                console.error('External search error:', error);
+            }
+        }
+
+        function displayResults(data) {
+            const resultsDiv = document.getElementById('results');
+            const companiesList = document.getElementById('companiesList');
+            const resultsTitle = document.getElementById('resultsTitle');
+            const resultsStats = document.getElementById('resultsStats');
+
+            resultsTitle.textContent = 'Hakutulokset';
+            resultsStats.textContent = `${data.totalCount} yritystä löytyi (sivu ${data.page}/${data.totalPages})`;
+
+            companiesList.innerHTML = '';
+
+            if (data.companies.length === 0) {
+                companiesList.innerHTML = '<p style="text-align: center; color: #7f8c8d; padding: 40px;">Ei tuloksia hakuehdoilla.</p>';
+            } else {
+                data.companies.forEach(company => {
+                    companiesList.appendChild(createCompanyCard(company));
+                });
+            }
+
+            resultsDiv.style.display = 'block';
+        }
+
+        function displayExternalResults(companies) {
+            const resultsDiv = document.getElementById('results');
+            const companiesList = document.getElementById('companiesList');
+            const resultsTitle = document.getElementById('resultsTitle');
+            const resultsStats = document.getElementById('resultsStats');
+
+            resultsTitle.textContent = 'Ulkoiset hakutulokset';
+            resultsStats.textContent = `${companies.length} yritystä löytyi CompanyFacts.eu:sta`;
+
+            companiesList.innerHTML = '';
+
+            companies.forEach(company => {
+                companiesList.appendChild(createExternalCompanyCard(company));
+            });
+
+            resultsDiv.style.display = 'block';
+        }
+
+        function displayCompanyDetails(company) {
+            const resultsDiv = document.getElementById('results');
+            const companiesList = document.getElementById('companiesList');
+            const resultsTitle = document.getElementById('resultsTitle');
+            const resultsStats = document.getElementById('resultsStats');
+
+            resultsTitle.textContent = 'Yrityksen tiedot';
+            resultsStats.textContent = `Y-tunnus: ${company.businessId}`;
+
+            companiesList.innerHTML = '';
+            companiesList.appendChild(createDetailedCompanyCard(company));
+
+            resultsDiv.style.display = 'block';
+        }
+
+        function createCompanyCard(company) {
+            const card = document.createElement('div');
+            card.className = 'company-card';
+
+            const confidenceClass = getConfidenceClass(company.productConfidenceScore);
+            const turnoverFormatted = company.turnover ? new Intl.NumberFormat('fi-FI').format(company.turnover) + ' €' : 'Ei tietoa';
+            
+            card.innerHTML = `
+                <div class="company-header">
+                    <div>
+                        <div class="company-name">${company.name}</div>
+                        <div style="color: #7f8c8d;">${company.businessId}</div>
+                    </div>
+                    <div>
+                        <span class="confidence-score ${confidenceClass}">
+                            ${company.productConfidenceScore ? Math.round(company.productConfidenceScore * 100) + '%' : 'N/A'}
+                        </span>
+                    </div>
+                </div>
+                <div class="company-info">
+                    <div class="info-item">
+                        <span class="info-label">Toimiala:</span>
+                        <span class="info-value">${company.industry || 'Ei tietoa'}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Liikevaihto:</span>
+                        <span class="info-value">${turnoverFormatted}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Henkilöstö:</span>
+                        <span class="info-value">${company.employeeCount || 'Ei tietoa'}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Sijainti:</span>
+                        <span class="info-value">${company.location || 'Ei tietoa'}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Omat tuotteet:</span>
+                        <span class="info-value">${company.hasOwnProducts ? 'Kyllä' : 'Ei'}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Kotisivu:</span>
+                        <span class="info-value">
+                            ${company.website ? `<a href="${company.website}" target="_blank">${company.website}</a>` : 'Ei tietoa'}
+                        </span>
+                    </div>
+                </div>
+                ${company.mainProducts.length > 0 ? `
+                    <div style="margin-top: 15px;">
+                        <strong>Päätuotteet:</strong> ${company.mainProducts.join(', ')}
+                    </div>
+                ` : ''}
+                <div style="margin-top: 15px; text-align: right;">
+                    <button class="btn btn-primary" onclick="searchSpecificCompany('${company.businessId}')">
+                        📋 Yksityiskohtaiset tiedot
+                    </button>
+                </div>
+            `;
+
+            return card;
+        }
+
+        function createExternalCompanyCard(company) {
+            const card = document.createElement('div');
+            card.className = 'company-card';
+            
+            card.innerHTML = `
+                <div class="company-header">
+                    <div>
+                        <div class="company-name">${company.name}</div>
+                        <div style="color: #7f8c8d;">${company.businessId}</div>
+                    </div>
+                    <div>
+                        <span style="background: #e3f2fd; color: #1565c0; padding: 5px 12px; border-radius: 20px; font-size: 0.9em;">
+                            Ulkoinen lähde
+                        </span>
+                    </div>
+                </div>
+                <div class="company-info">
+                    ${company.addresses && company.addresses.length > 0 ? `
+                        <div class="info-item">
+                            <span class="info-label">Osoite:</span>
+                            <span class="info-value">
+                                ${company.addresses[0].street || ''} ${company.addresses[0].postalCode || ''} ${company.addresses[0].city || ''}
+                            </span>
+                        </div>
+                    ` : ''}
+                    <div class="info-item">
+                        <span class="info-label">Rekisteri:</span>
+                        <span class="info-value">${company.tradeRegister}</span>
+                    </div>
+                </div>
+                <div style="margin-top: 15px; text-align: right;">
+                    <button class="btn btn-success" onclick="enrichCompany('${company.businessId}')">
+                        ⬇️ Tuo tietokantaan
+                    </button>
+                </div>
+            `;
+
+            return card;
+        }
+
+        function createDetailedCompanyCard(company) {
+            const card = document.createElement('div');
+            card.className = 'company-card';
+
+            const confidenceClass = getConfidenceClass(company.productConfidenceScore);
+            const turnoverFormatted = company.turnover ? new Intl.NumberFormat('fi-FI').format(company.turnover) + ' €' : 'Ei tietoa';
+
+            card.innerHTML = `
+                <div class="company-header">
+                    <div>
+                        <div class="company-name">${company.name}</div>
+                        <div style="color: #7f8c8d;">${company.businessId}</div>
+                    </div>
+                    <div>
+                        <span class="confidence-score ${confidenceClass}">
+                            ${company.productConfidenceScore ? Math.round(company.productConfidenceScore * 100) + '%' : 'N/A'}
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="company-info">
+                    <div class="info-item">
+                        <span class="info-label">Toimiala:</span>
+                        <span class="info-value">${company.industry || 'Ei tietoa'}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Liikevaihto:</span>
+                        <span class="info-value">${turnoverFormatted}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Henkilöstö:</span>
+                        <span class="info-value">${company.employeeCount || 'Ei tietoa'}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Sijainti:</span>
+                        <span class="info-value">${company.location || 'Ei tietoa'}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Osoite:</span>
+                        <span class="info-value">${company.address || 'Ei tietoa'}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Kotisivu:</span>
+                        <span class="info-value">
+                            ${company.website ? `<a href="${company.website}" target="_blank">${company.website}</a>` : 'Ei tietoa'}
+                        </span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Puhelin:</span>
+                        <span class="info-value">${company.phone || 'Ei tietoa'}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Sähköposti:</span>
+                        <span class="info-value">${company.email || 'Ei tietoa'}</span>
+                    </div>
+                </div>
+
+                ${company.products && company.products.length > 0 ? `
+                    <div style="margin-top: 20px;">
+                        <h3>🏭 Tuotteet</h3>
+                        ${company.products.map(product => `
+                            <div style="margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 5px;">
+                                <strong>${product.name}</strong> 
+                                ${product.isMainProduct ? '<span style="color: #27ae60;">★ Päätuote</span>' : ''}
+                                <br>
+                                ${product.description ? `<small>${product.description}</small><br>` : ''}
+                                <small>Kategoria: ${product.category || 'Ei määritelty'} | 
+                                Luottamus: ${product.confidenceScore ? Math.round(product.confidenceScore * 100) + '%' : 'N/A'}</small>
+                            </div>
+                        `).join('')}
+                    </div>
+                ` : ''}
+
+                ${company.analysis ? `
+                    <div style="margin-top: 20px;">
+                        <h3>🧠 AI-Analyysi</h3>
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 5px;">
+                            <div style="margin-bottom: 10px;">
+                                <strong>Toimiala-pisteet:</strong> ${Math.round(company.analysis.industryScore * 100)}% |
+                                <strong>Koko-pisteet:</strong> ${Math.round(company.analysis.companySizeScore * 100)}% |
+                                <strong>Vienti-pisteet:</strong> ${Math.round(company.analysis.exportScore * 100)}%
+                            </div>
+                            <div style="font-style: italic; color: #666;">
+                                ${company.analysis.analysisReasoning}
+                            </div>
+                            <div style="margin-top: 10px; font-size: 0.9em; color: #888;">
+                                Analysoitu: ${new Date(company.analysis.analysisDate).toLocaleDateString('fi-FI')}
+                            </div>
+                        </div>
+                    </div>
+                ` : ''}
+
+                ${company.financialHistory && company.financialHistory.length > 0 ? `
+                    <div style="margin-top: 20px;">
+                        <h3>💰 Taloushistoria</h3>
+                        <div style="overflow-x: auto;">
+                            <table style="width: 100%; border-collapse: collapse;">
+                                <thead>
+                                    <tr style="background: #f8f9fa;">
+                                        <th style="padding: 10px; text-align: left;">Vuosi</th>
+                                        <th style="padding: 10px; text-align: right;">Liikevaihto</th>
+                                        <th style="padding: 10px; text-align: right;">Tulos</th>
+                                        <th style="padding: 10px; text-align: right;">Terveydestä</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${company.financialHistory.map(fh => `
+                                        <tr style="border-bottom: 1px solid #e9ecef;">
+                                            <td style="padding: 8px;">${fh.year}</td>
+                                            <td style="padding: 8px; text-align: right;">
+                                                ${fh.revenue ? new Intl.NumberFormat('fi-FI').format(fh.revenue) + ' €' : '-'}
+                                            </td>
+                                            <td style="padding: 8px; text-align: right;">
+                                                ${fh.profit ? new Intl.NumberFormat('fi-FI').format(fh.profit) + ' €' : '-'}
+                                            </td>
+                                            <td style="padding: 8px; text-align: right;">
+                                                ${fh.financialHealthScore ? Math.round(fh.financialHealthScore * 100) + '%' : '-'}
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                ` : ''}
+
+                <div style="margin-top: 15px; text-align: right; font-size: 0.9em; color: #888;">
+                    Viimeksi päivitetty: ${company.lastVerified ? new Date(company.lastVerified).toLocaleDateString('fi-FI') : 'Ei tietoa'}
+                </div>
+            `;
+
+            return card;
+        }
+
+        function getConfidenceClass(score) {
+            if (!score) return 'confidence-low';
+            if (score >= 0.7) return 'confidence-high';
+            if (score >= 0.4) return 'confidence-medium';
+            return 'confidence-low';
+        }
+
+        function updatePagination() {
+            const paginationDiv = document.getElementById('pagination');
+            
+            if (totalPages <= 1) {
+                paginationDiv.innerHTML = '';
+                return;
+            }
+
+            let html = '';
+            
+            // Previous button
+            if (currentPage > 1) {
+                html += `<button onclick="searchCompanies(${currentPage - 1})">‹ Edellinen</button>`;
+            }
+
+            // Page numbers
+            const maxVisible = 5;
+            let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+            let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+
+            if (endPage - startPage + 1 < maxVisible) {
+                startPage = Math.max(1, endPage - maxVisible + 1);
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
+                html += `<button class="${i === currentPage ? 'active' : ''}" onclick="searchCompanies(${i})">${i}</button>`;
+            }
+
+            // Next button
+            if (currentPage < totalPages) {
+                html += `<button onclick="searchCompanies(${currentPage + 1})">Seuraava ›</button>`;
+            }
+
+            paginationDiv.innerHTML = html;
+        }
+
+        function clearSearch() {
+            document.getElementById('searchForm').reset();
+            document.getElementById('results').style.display = 'none';
+        }
+
+        function showLoading() {
+            const resultsDiv = document.getElementById('results');
+            const companiesList = document.getElementById('companiesList');
+            
+            companiesList.innerHTML = '<div class="loading">Haetaan yritystietoja...</div>';
+            resultsDiv.style.display = 'block';
+        }
+
+        function showError(message) {
+            const resultsDiv = document.getElementById('results');
+            const companiesList = document.getElementById('companiesList');
+            
+            companiesList.innerHTML = `<div class="error">❌ ${message}</div>`;
+            resultsDiv.style.display = 'block';
+        }
+
+        function showMessage(message, type = 'info') {
+            const resultsDiv = document.getElementById('results');
+            const companiesList = document.getElementById('companiesList');
+            
+            const className = type === 'success' ? 'success' : type === 'error' ? 'error' : 'info';
+            companiesList.innerHTML = `<div class="${className}">ℹ️ ${message}</div>`;
+            resultsDiv.style.display = 'block';
+        }
+
+        // Initialize with some default values
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('minTurnover').value = '5000000';
+            document.getElementById('maxTurnover').value = '10000000';
+        });
+    </script>
+</body>
+</html>
