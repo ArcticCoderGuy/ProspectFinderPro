@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: prospectfinder-pro
+    env: dotnet
+    plan: free
+    buildCommand: dotnet publish src/Services/ProspectFinderPro.DataIngestion/ProspectFinderPro.DataIngestion.csproj -c Release -o out
+    startCommand: dotnet out/ProspectFinderPro.DataIngestion.dll
+    healthCheckPath: /health
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: ASPNETCORE_URLS
+        value: http://0.0.0.0:10000
+    
+  - type: pserv
+    name: prospectfinder-postgres
+    plan: free
+    env: postgresql
+    disk:
+      name: postgres-data
+      mountPath: /var/lib/postgresql/data
+      sizeGB: 1
