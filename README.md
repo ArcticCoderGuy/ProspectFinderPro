@@ -69,12 +69,18 @@ Our proprietary ML algorithm determines if companies have their own products wit
 
 2. **Start with Docker Compose**
    ```bash
-   docker-compose up -d
+   # Use automated deployment script
+   scripts/deploy.ps1 -Environment development -Build -Seed
+   
+   # Or manual Docker Compose
+   cd infrastructure/docker
+   docker compose up -d
    ```
 
 3. **Access the services**
    - API Gateway: http://localhost:5000
    - Web Application: http://localhost:5001
+   - API Documentation: http://localhost:5000/swagger
    - SQL Server: localhost:1433
    - Redis: localhost:6379
 
@@ -100,18 +106,35 @@ Our proprietary ML algorithm determines if companies have their own products wit
 ## 📋 **Project Structure**
 
 ```
-ProspectFinderPro/
+FinPrSQL/
 ├── src/
 │   ├── Services/
-│   │   ├── ProspectFinderPro.DataIngestion/         # Multi-source data collection
-│   │   ├── ProspectFinderPro.BusinessIntelligence/  # AI classification engine
 │   │   ├── ProspectFinderPro.ApiGateway/           # External API gateway
+│   │   ├── ProspectFinderPro.DataIngestion/        # Multi-source data collection
+│   │   ├── ProspectFinderPro.BusinessIntelligence/ # AI classification engine
 │   │   ├── ProspectFinderPro.WebApp/               # Blazor web application
 │   │   └── ProspectFinderPro.Notifications/        # Alert system
 │   └── Shared/
 │       └── ProspectFinderPro.Shared/               # Common models & data context
-├── docker-compose.yml                              # Container orchestration
-└── README.md
+├── tests/
+│   ├── Unit/                                       # Unit tests by service
+│   └── Integration/                                # Integration & E2E tests
+├── infrastructure/
+│   ├── docker/                                     # Docker Compose configs
+│   ├── k8s/                                        # Kubernetes manifests
+│   └── terraform/                                  # Infrastructure as Code
+├── docs/
+│   ├── API.md                                      # API documentation
+│   ├── DEPLOYMENT.md                               # Deployment guide
+│   └── ARCHITECTURE.md                             # System architecture
+├── scripts/
+│   ├── build.ps1                                   # Build automation
+│   ├── deploy.ps1                                  # Deployment automation
+│   ├── test.ps1                                    # Test automation
+│   └── diagnostics.ps1                             # System diagnostics
+└── tools/
+    ├── seed-data/                                  # Sample data files
+    └── migration-scripts/                          # Database migrations
 ```
 
 ## 🔧 **Configuration**

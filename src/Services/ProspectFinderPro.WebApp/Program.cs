@@ -1,10 +1,20 @@
 using ProspectFinderPro.WebApp.Components;
+using ProspectFinderPro.WebApp.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+// Add HTTP clients for real data sources
+builder.Services.AddHttpClient<StatisticsFinlandService>();
+builder.Services.AddHttpClient<YTJDataService>();
+builder.Services.AddHttpClient<CompanyFactsService>();
+builder.Services.AddHttpClient<AvoinDataService>();
+
+// Add unified data service that combines all sources
+builder.Services.AddScoped<UnifiedDataService>();
 
 var app = builder.Build();
 

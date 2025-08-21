@@ -1,0 +1,52 @@
+[
+  {
+    "businessId": "2468013-5",
+    "name": "Suomen Terveystalo Oyj",
+    "turnover": 8500000,
+    "industry": "Healthcare Technology",
+    "hasOwnProducts": true,
+    "location": "Helsinki, 00100",
+    "employeeCount": 45,
+    "description": "Digital healthcare platform"
+  },
+  {
+    "businessId": "1357902-4", 
+    "name": "Nordic Machines Oy",
+    "turnover": 6200000,
+    "industry": "Industrial Machinery",
+    "hasOwnProducts": true,
+    "location": "Tampere, 33100",
+    "employeeCount": 32,
+    "description": "Manufacturing equipment"
+  },
+  {
+    "businessId": "9876543-2",
+    "name": "Finnish Tech Solutions Oy",
+    "turnover": 7800000,
+    "industry": "Software Development", 
+    "hasOwnProducts": true,
+    "location": "Turku, 20100",
+    "employeeCount": 38,
+    "description": "Enterprise software solutions"
+  },
+  {
+    "businessId": "5432109-8",
+    "name": "Arctic Innovations Ltd",
+    "turnover": 5500000,
+    "industry": "Clean Technology",
+    "hasOwnProducts": true,
+    "location": "Oulu, 90100", 
+    "employeeCount": 28,
+    "description": "Renewable energy solutions"
+  },
+  {
+    "businessId": "1122334-4",
+    "name": "Baltic Marine Systems Oy",
+    "turnover": 9200000,
+    "industry": "Marine Technology",
+    "hasOwnProducts": true,
+    "location": "Helsinki, 00180",
+    "employeeCount": 52,
+    "description": "Ship automation systems"
+  }
+]

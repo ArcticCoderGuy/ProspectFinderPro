@@ -16,7 +16,7 @@
 
   api-gateway:
     build:
-      context: .
+      context: ../../
       dockerfile: src/Services/ProspectFinderPro.ApiGateway/Dockerfile
     environment:
       ASPNETCORE_ENVIRONMENT: "Production"
@@ -30,10 +30,11 @@
 
   webapp:
     build:
-      context: .
+      context: ../../
       dockerfile: src/Services/ProspectFinderPro.WebApp/Dockerfile
     environment:
       ASPNETCORE_ENVIRONMENT: "Development"
+      ApiBaseUrlServer: "http://api-gateway:8080"
     ports:
       - "5001:8080"
     depends_on:

@@ -27,7 +27,7 @@ services:
 
   api-gateway:
     build:
-      context: .
+      context: ../../
       dockerfile: src/Services/ProspectFinderPro.ApiGateway/Dockerfile
     container_name: prospectfinder-api-gateway
     environment:
@@ -44,7 +44,7 @@ services:
 
   data-ingestion:
     build:
-      context: .
+      context: ../../
       dockerfile: src/Services/ProspectFinderPro.DataIngestion/Dockerfile
     container_name: prospectfinder-data-ingestion
     environment:
@@ -60,7 +60,7 @@ services:
 
   business-intelligence:
     build:
-      context: .
+      context: ../../
       dockerfile: src/Services/ProspectFinderPro.BusinessIntelligence/Dockerfile
     container_name: prospectfinder-business-intelligence
     environment:
@@ -75,7 +75,7 @@ services:
 
   webapp:
     build:
-      context: .
+      context: ../../
       dockerfile: src/Services/ProspectFinderPro.WebApp/Dockerfile
     container_name: prospectfinder-webapp
     environment:
@@ -91,7 +91,7 @@ services:
 
   notifications:
     build:
-      context: .
+      context: ../../
       dockerfile: src/Services/ProspectFinderPro.Notifications/Dockerfile
     container_name: prospectfinder-notifications
     environment:

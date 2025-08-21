@@ -2,7 +2,11 @@
 @rendermode InteractiveServer
 @using System.Globalization
 @using System.Net.Http.Json
+@using ProspectFinderPro.WebApp.Services
 @inject IConfiguration Config
+@inject UnifiedDataService UnifiedDataService
+
+<link href="~/turnover-selector.css" rel="stylesheet" />
 
 <div style="display: flex; justify-content: space-between; align-items: flex-start;">
   <div>
@@ -21,19 +25,174 @@
   </div>
 </div>
 
-<div class="row g-2">
-  <div class="col"><input class="form-control" @bind="minTurnoverStr" placeholder="Min € (e.g. 5000000)" /></div>
-  <div class="col"><input class="form-control" @bind="maxTurnoverStr" placeholder="Max € (e.g. 10000000)" /></div>
-  <div class="col">
-    <select class="form-select" @bind="hasOwnProductsStr">
-      <option value="">Has own products?</option>
-      <option value="true">Yes</option>
-      <option value="false">No</option>
-    </select>
+<!-- Sorting Controls -->
+<div class="card mt-3">
+  <div class="card-header bg-secondary text-white">
+    <h5 class="mb-0">📊 Sorting & Filtering</h5>
   </div>
-  <div class="col d-flex gap-2">
-    <button class="btn btn-primary" @onclick="RunSearch">Search</button>
-    <button class="btn btn-outline-secondary" @onclick="LoadDemo">Load demo 20</button>
+  <div class="card-body">
+    <div class="row g-3">
+      <div class="col-md-3">
+        <label class="form-label">Data Source</label>
+        <select class="form-select" @bind="useRealData" @bind:after="OnDataSourceChanged">
+          <option value="true">🌍 Real Companies (Avoindata.fi)</option>
+          <option value="false">🧪 Demo Data (Testing)</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Sort by</label>
+        <select class="form-select" @bind="sortBy" @bind:after="OnSortChanged">
+          <option value="turnover">💰 Turnover</option>
+          <option value="location">📍 Location (Läänittäin)</option>
+          <option value="employees">👥 Employee Count (Henkilökunta)</option>
+          <option value="name">🏢 Company Name</option>
+          <option value="industry">🏭 Industry</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Order</label>
+        <select class="form-select" @bind="sortDescending" @bind:after="OnSortChanged">
+          <option value="false">⬆️ Ascending (Nouseva)</option>
+          <option value="true">⬇️ Descending (Laskeva)</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Quick Actions</label>
+        <div class="d-flex gap-2">
+          <button class="btn btn-outline-primary btn-sm" @onclick="SetLocationSort">
+            📍 A→Ö
+          </button>
+          <button class="btn btn-outline-primary btn-sm" @onclick="SetEmployeeSort">
+            👥 Most Staff
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modern Turnover Selector -->
+<div class="card mt-3">
+  <div class="card-header bg-primary text-white">
+    <h5 class="mb-0">💰 Annual Turnover Range</h5>
+  </div>
+  <div class="card-body">
+    <div class="turnover-selector">
+      <!-- Range Display -->
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="turnover-display">
+          <span class="badge bg-success fs-6">@GetTurnoverDisplay(selectedMinTurnover)</span>
+        </div>
+        <div class="mx-2">
+          <i class="text-muted">to</i>
+        </div>
+        <div class="turnover-display">
+          <span class="badge bg-warning text-dark fs-6">@GetTurnoverDisplay(selectedMaxTurnover)</span>
+        </div>
+      </div>
+      
+      <!-- Interactive Range Sliders -->
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label">Minimum (M€)</label>
+          <div class="d-flex align-items-center">
+            <button class="btn btn-outline-secondary btn-sm me-2" @onclick="() => AdjustMinTurnover(-1000000)">◄</button>
+            <input type="range" class="form-range flex-grow-1" 
+                   min="1000000" max="15000000" step="1000000"
+                   @bind="selectedMinTurnover" @bind:event="oninput" />
+            <button class="btn btn-outline-secondary btn-sm ms-2" @onclick="() => AdjustMinTurnover(1000000)">►</button>
+          </div>
+          <div class="turnover-markers">
+            @for (int i = 1; i <= 15; i++)
+            {
+              <span class="marker @(selectedMinTurnover == i * 1000000 ? "active" : "")" 
+                    style="left: @(((i-1) * 100.0 / 14).ToString("F1", System.Globalization.CultureInfo.InvariantCulture))%">
+                @(i)M
+              </span>
+            }
+          </div>
+        </div>
+        
+        <div class="col-md-6">
+          <label class="form-label">Maximum (M€)</label>
+          <div class="d-flex align-items-center">
+            <button class="btn btn-outline-secondary btn-sm me-2" @onclick="() => AdjustMaxTurnover(-1000000)">◄</button>
+            <input type="range" class="form-range flex-grow-1" 
+                   min="@(selectedMinTurnover)" max="20000000" step="1000000"
+                   @bind="selectedMaxTurnover" @bind:event="oninput" />
+            <button class="btn btn-outline-secondary btn-sm ms-2" @onclick="() => AdjustMaxTurnover(1000000)">►</button>
+          </div>
+          <div class="turnover-markers">
+            @for (int i = (int)(selectedMinTurnover/1000000); i <= 20; i++)
+            {
+              <span class="marker @(selectedMaxTurnover == i * 1000000 ? "active" : "")" 
+                    style="left: @(((i-selectedMinTurnover/1000000) * 100.0 / (20-selectedMinTurnover/1000000)).ToString("F1", System.Globalization.CultureInfo.InvariantCulture))%">
+                @(i)M
+              </span>
+            }
+          </div>
+        </div>
+      </div>
+      
+      <!-- Quick Preset Buttons -->
+      <div class="mt-3">
+        <label class="form-label">Quick Presets:</label>
+        <div class="d-flex flex-wrap gap-2">
+          <button class="btn btn-outline-primary btn-sm" @onclick="() => SetPreset(1, 5)">🏢 Startup (1-5M€)</button>
+          <button class="btn btn-outline-primary btn-sm" @onclick="() => SetPreset(5, 10)">🏭 SME (5-10M€)</button>
+          <button class="btn btn-outline-primary btn-sm" @onclick="() => SetPreset(10, 20)">🏗️ Large (10-20M€)</button>
+          <button class="btn btn-outline-primary btn-sm" @onclick="() => SetPreset(1, 20)">🌐 All (1-20M€)</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Filter Options -->
+<div class="row g-3 mt-3">
+  <div class="col-md-4">
+    <div class="card h-100">
+      <div class="card-body">
+        <label class="form-label">🏭 Product Ownership</label>
+        <select class="form-select" @bind="hasOwnProductsStr">
+          <option value="">All companies</option>
+          <option value="true">✅ Has own products</option>
+          <option value="false">❌ No own products</option>
+        </select>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-md-4">
+    <div class="card h-100">
+      <div class="card-body">
+        <label class="form-label">🌍 Data Source</label>
+        <select class="form-select" @bind="selectedDataSource">
+          <option value="demo">📊 Demo Data (20 companies)</option>
+          <option value="avoindata">🇫🇮 Avoindata.fi (YTJ Registry - REAL DATA)</option>
+          <option value="ytj">🏢 YTJ Registry Direct</option>
+          <option value="companyfacts">🇪🇺 CompanyFacts.eu (Nordic companies)</option>
+          <option value="statfi">📊 Statistics Finland</option>
+          <option value="combined">🔗 All Real Sources Combined</option>
+        </select>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-md-4">
+    <div class="card h-100">
+      <div class="card-body d-flex flex-column">
+        <label class="form-label">🔍 Search Actions</label>
+        <div class="d-flex flex-column gap-2 flex-grow-1 justify-content-center">
+          <button class="btn btn-primary" @onclick="RunSearch">
+            <i class="me-1">🔍</i> Search Companies
+          </button>
+          <button class="btn btn-outline-secondary" @onclick="LoadDemo">
+            <i class="me-1">📋</i> Load Demo Data
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -64,17 +223,73 @@ else
     @foreach (var r in rows)
     {
       <tr>
-        <td>@r.businessId</td><td>@r.name</td><td>@r.turnover.ToString("N0")</td>
+        <td>
+          <a href="/company/@Uri.EscapeDataString(r.businessId)" class="text-primary fw-bold text-decoration-none">
+            @r.businessId
+          </a>
+        </td>
+        <td>@r.name</td><td>@r.turnover.ToString("N0")</td>
         <td>@r.industry</td><td>@r.hasOwnProducts</td><td>@r.productConfidenceScore</td>
         <td>@r.employeeCount</td><td>@r.location</td>
       </tr>
     }
     </tbody>
   </table>
+  
+  <!-- Pagination Controls -->
+  @if (totalResults > 0)
+  {
+    <div class="d-flex justify-content-between align-items-center mt-3">
+      <div class="text-muted">
+        Showing @((currentPage - 1) * pageSize + 1) to @(Math.Min(currentPage * pageSize, totalResults)) of @totalResults results
+      </div>
+      
+      <nav aria-label="Search results pagination">
+        <ul class="pagination mb-0">
+          <!-- Previous Button -->
+          <li class="page-item @(currentPage <= 1 ? "disabled" : "")">
+            <button class="page-link" @onclick="() => GoToPage(currentPage - 1)" 
+                    disabled="@(currentPage <= 1)">
+              <i class="me-1">◄</i> Previous
+            </button>
+          </li>
+          
+          <!-- Page Numbers -->
+          @for (int pageNum = Math.Max(1, currentPage - 2); pageNum <= Math.Min(totalPages, currentPage + 2); pageNum++)
+          {
+            <li class="page-item @(pageNum == currentPage ? "active" : "")">
+              <button class="page-link" @onclick="() => GoToPage(pageNum)">
+                @pageNum
+              </button>
+            </li>
+          }
+          
+          <!-- Next Button -->
+          <li class="page-item @(currentPage >= totalPages ? "disabled" : "")">
+            <button class="page-link" @onclick="() => GoToPage(currentPage + 1)" 
+                    disabled="@(currentPage >= totalPages)">
+              Next <i class="ms-1">►</i>
+            </button>
+          </li>
+        </ul>
+      </nav>
+      
+      <!-- Page Size Selector -->
+      <div class="d-flex align-items-center">
+        <label class="form-label me-2 mb-0">Results per page:</label>
+        <select class="form-select form-select-sm" style="width: auto;" @bind="pageSize" @bind:after="OnPageSizeChanged">
+          <option value="10">10</option>
+          <option value="20">20</option>
+          <option value="50">50</option>
+          <option value="100">100</option>
+        </select>
+      </div>
+    </div>
+  }
 }
 
 @code {
-  string? minTurnoverStr; string? maxTurnoverStr; string? hasOwnProductsStr;
+  string? hasOwnProductsStr;
   List<Item>? rows = null;
   bool loading = false;
   string? error;
@@ -82,6 +297,22 @@ else
   HttpClient _client = default!;
   string _base = default!;
   bool _demoLoadedOnce = false;
+  
+  // New UI Controls
+  long selectedMinTurnover = 5000000;  // Default 5M€
+  long selectedMaxTurnover = 10000000; // Default 10M€  
+  string selectedDataSource = "avoindata"; // Default to real companies from Avoindata.fi
+  bool useRealData = true; // Use real companies by default
+  
+  // Pagination Controls
+  int currentPage = 1;
+  int pageSize = 20;
+  int totalResults = 0;
+  int totalPages = 0;
+  
+  // Sorting Controls
+  string sortBy = "turnover"; // Default sort by turnover
+  bool sortDescending = true; // Default descending order
 
   protected override async Task OnInitializedAsync()
   {
@@ -101,22 +332,164 @@ else
     }
   }
 
-  async Task LoadDemo() => await Fetch("/api/companies/search?page=1&pageSize=20");
+  async Task LoadDemo() 
+  {
+    if (useRealData) 
+    {
+      await FetchFromRealAPI();
+    }
+    else 
+    {
+      await Fetch($"/api/companies/search?page=1&pageSize=20&sortBy={sortBy}&sortDesc={sortDescending.ToString().ToLower()}");
+    }
+  }
 
   async Task RunSearch()
   {
-    decimal? min = decimal.TryParse(minTurnoverStr, NumberStyles.Any, CultureInfo.InvariantCulture, out var d1) ? d1 : null;
-    decimal? max = decimal.TryParse(maxTurnoverStr, NumberStyles.Any, CultureInfo.InvariantCulture, out var d2) ? d2 : null;
-    bool? owns = hasOwnProductsStr == "true" ? true : hasOwnProductsStr == "false" ? false : (bool?)null;
-
-    var qs = new List<string>();
-    if (min is > 0) qs.Add($"minTurnover={min.Value.ToString(CultureInfo.InvariantCulture)}");
-    if (max is > 0) qs.Add($"maxTurnover={max.Value.ToString(CultureInfo.InvariantCulture)}");
-    if (owns is not null) qs.Add($"hasOwnProducts={(owns!.Value ? "true" : "false")}");
-    qs.Add("page=1"); qs.Add("pageSize=50");
-
-    await Fetch("/api/companies/search?" + string.Join("&", qs));
+    currentPage = 1; // Reset to first page for new search
+    
+    if (useRealData)
+    {
+      await FetchFromRealAPI();
+    }
+    else
+    {
+      await RunDemoSearch();
+    }
   }
+  
+  async Task FetchFromRealAPI()
+  {
+    loading = true; error = null;
+    try
+    {
+      decimal min = selectedMinTurnover;
+      decimal max = selectedMaxTurnover;
+      bool? owns = hasOwnProductsStr == "true" ? true : hasOwnProductsStr == "false" ? false : (bool?)null;
+
+      var queryParams = new List<string> 
+      { 
+        $"page={currentPage}", 
+        $"pageSize={pageSize}",
+        $"sortBy={sortBy}",
+        $"sortDesc={sortDescending.ToString().ToLower()}",
+        $"dataSource={selectedDataSource}",
+        $"minTurnover={min.ToString(CultureInfo.InvariantCulture)}",
+        $"maxTurnover={max.ToString(CultureInfo.InvariantCulture)}"
+      };
+      
+      if (owns is not null) queryParams.Add($"hasOwnProducts={(owns!.Value ? "true" : "false")}");
+
+      var url = "/api/companies/search-real?" + string.Join("&", queryParams);
+      await Fetch(url);
+    }
+    catch (Exception ex)
+    {
+      error = $"Failed to fetch real companies: {ex.Message}";
+      rows = new();
+      totalResults = 0;
+      totalPages = 0;
+    }
+    finally { loading = false; }
+  }
+  
+  async Task OnDataSourceChanged()
+  {
+    currentPage = 1;
+    await LoadDemo();
+  }
+  
+  // New UI Helper Methods
+  string GetTurnoverDisplay(long turnover)
+  {
+    return $"{turnover / 1000000:F1}M€";
+  }
+  
+  void AdjustMinTurnover(long delta)
+  {
+    var newValue = selectedMinTurnover + delta;
+    if (newValue >= 1000000 && newValue <= 15000000 && newValue < selectedMaxTurnover)
+    {
+      selectedMinTurnover = newValue;
+    }
+  }
+  
+  void AdjustMaxTurnover(long delta)
+  {
+    var newValue = selectedMaxTurnover + delta;
+    if (newValue >= selectedMinTurnover && newValue <= 20000000)
+    {
+      selectedMaxTurnover = newValue;
+    }
+  }
+  
+  void SetPreset(int minM, int maxM)
+  {
+    selectedMinTurnover = minM * 1000000L;
+    selectedMaxTurnover = maxM * 1000000L;
+  }
+  
+  async Task FetchFromRealDataSources()
+  {
+    loading = true; error = null;
+    try 
+    {
+      bool? owns = hasOwnProductsStr == "true" ? true : hasOwnProductsStr == "false" ? false : (bool?)null;
+      
+      var companies = await UnifiedDataService.SearchCompaniesAsync(
+        selectedDataSource, 
+        selectedMinTurnover, 
+        selectedMaxTurnover, 
+        owns);
+      
+      // Apply pagination to results
+      totalResults = companies.Count;
+      totalPages = (int)Math.Ceiling((double)totalResults / pageSize);
+      
+      var paginatedCompanies = companies
+        .Skip((currentPage - 1) * pageSize)
+        .Take(pageSize)
+        .ToList();
+      
+      // Convert unified companies to our display format
+      rows = paginatedCompanies.Select(c => new Item(
+        businessId: c.BusinessId,
+        name: c.Name,
+        turnover: c.Turnover,
+        industry: c.Industry,
+        hasOwnProducts: c.HasOwnProducts,
+        productConfidenceScore: c.ProductConfidenceScore,
+        employeeCount: c.EmployeeCount,
+        location: c.Location
+      )).ToList();
+      
+      if (totalResults > 0)
+      {
+        error = null;
+      }
+      else
+      {
+        error = $"No companies found in {GetDataSourceDisplayName(selectedDataSource)} for the selected criteria.";
+      }
+    }
+    catch (Exception ex)
+    {
+      error = $"Real data source '{GetDataSourceDisplayName(selectedDataSource)}' failed: {ex.Message}";
+      rows = new();
+      totalResults = 0;
+      totalPages = 0;
+    }
+    finally { loading = false; }
+  }
+  
+  string GetDataSourceDisplayName(string dataSource) => dataSource switch
+  {
+    "ytj" => "YTJ Registry",
+    "companyfacts" => "CompanyFacts.eu",
+    "statfi" => "Statistics Finland",
+    "combined" => "Combined Real Sources", 
+    _ => dataSource
+  };
 
   async Task Fetch(string url)
   {
@@ -125,13 +498,107 @@ else
     {
       var resp = await _client.GetFromJsonAsync<SearchResponse>(url);
       rows = resp?.items ?? new();
+      
+      // Update pagination info from response
+      if (resp != null)
+      {
+        totalResults = resp.total;
+        currentPage = resp.page;
+        pageSize = resp.pageSize;
+        totalPages = (int)Math.Ceiling((double)totalResults / pageSize);
+      }
     }
     catch (Exception ex)
     {
       error = $"Request failed: {ex.Message}. Base: {_base}";
       rows = new();
+      totalResults = 0;
+      totalPages = 0;
     }
     finally { loading = false; }
+  }
+  
+  // Sorting Methods
+  async Task OnSortChanged()
+  {
+    currentPage = 1; // Reset to first page when sorting changes
+    
+    if (useRealData)
+    {
+      await FetchFromRealAPI();
+    }
+    else
+    {
+      await LoadDemo();
+    }
+  }
+  
+  async Task SetSort(string newSortBy, bool newSortDescending)
+  {
+    sortBy = newSortBy;
+    sortDescending = newSortDescending;
+    await OnSortChanged();
+  }
+  
+  async Task SetLocationSort() => await SetSort("location", false);
+  async Task SetEmployeeSort() => await SetSort("employees", true);
+  
+  // Pagination Methods
+  async Task GoToPage(int pageNumber)
+  {
+    if (pageNumber >= 1 && pageNumber <= totalPages && pageNumber != currentPage)
+    {
+      currentPage = pageNumber;
+      if (useRealData)
+      {
+        await FetchFromRealAPI();
+      }
+      else
+      {
+        await RunDemoSearch();
+      }
+    }
+  }
+  
+  async Task OnPageSizeChanged()
+  {
+    currentPage = 1; // Reset to first page when page size changes
+    totalPages = (int)Math.Ceiling((double)totalResults / pageSize);
+    
+    if (useRealData)
+    {
+      await FetchFromRealAPI();
+    }
+    else
+    {
+      await RunDemoSearch();
+    }
+  }
+  
+  async Task RunDemoSearch()
+  {
+    decimal min = selectedMinTurnover;
+    decimal max = selectedMaxTurnover;
+    bool? owns = hasOwnProductsStr == "true" ? true : hasOwnProductsStr == "false" ? false : (bool?)null;
+
+    var queryParams = new List<string> 
+    { 
+      $"page={currentPage}", 
+      $"pageSize={pageSize}",
+      $"sortBy={sortBy}",
+      $"sortDesc={sortDescending.ToString().ToLower()}"
+    };
+    
+    queryParams.Add($"minTurnover={min.ToString(CultureInfo.InvariantCulture)}");
+    queryParams.Add($"maxTurnover={max.ToString(CultureInfo.InvariantCulture)}");
+    if (owns is not null) queryParams.Add($"hasOwnProducts={(owns!.Value ? "true" : "false")}");
+
+    await Fetch("/api/companies/search?" + string.Join("&", queryParams));
+  }
+  
+  async Task RunRealDataSearch()
+  {
+    await FetchFromRealDataSources();
   }
 
   public record SearchResponse(int total, int page, int pageSize, List<Item> items);

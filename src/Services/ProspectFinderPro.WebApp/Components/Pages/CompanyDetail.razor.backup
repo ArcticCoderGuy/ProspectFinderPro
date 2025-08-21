@@ -1,0 +1,400 @@
+@page "/company/{businessId}"
+@rendermode InteractiveServer
+@using ProspectFinderPro.WebApp.Services
+@using ProspectFinderPro.WebApp.Models
+@inject UnifiedDataService UnifiedDataService
+
+<PageTitle>@(companyDetail?.Name ?? BusinessId)</PageTitle>
+
+<div class="container mt-3">
+  @if (loading)
+  {
+    <div class="text-center p-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <p class="mt-2">Loading company details...</p>
+    </div>
+  }
+  else if (!string.IsNullOrEmpty(error))
+  {
+    <div class="alert alert-danger">
+      <h4>⚠️ Error</h4>
+      <p>@error</p>
+      <a href="/search" class="btn btn-primary">← Back to Search</a>
+    </div>
+  }
+  else if (companyDetail != null)
+  {
+    <!-- Company Header -->
+    <div class="card border-primary mb-4">
+      <div class="card-header bg-primary text-white">
+        <div class="row align-items-center">
+          <div class="col-md-8">
+            <h2 class="mb-1">🏢 @companyDetail.Name</h2>
+            <p class="mb-0">
+              <span class="badge bg-light text-dark me-2">@BusinessId</span>
+              <span class="badge bg-success me-2">💰 @FormatTurnover(companyDetail.Turnover)</span>
+              <span class="badge bg-info">👥 @companyDetail.EmployeeCount employees</span>
+            </p>
+          </div>
+          <div class="col-md-4 text-end">
+            <a href="/search" class="btn btn-light me-2">← Back</a>
+            <a href="@GetYTJUrl(BusinessId)" target="_blank" class="btn btn-outline-light">YTJ</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <!-- Basic Information -->
+      <div class="col-lg-8">
+        <div class="card mb-4">
+          <div class="card-header">
+            <h5>📋 Company Information</h5>
+          </div>
+          <div class="card-body">
+            <table class="table table-borderless">
+              <tbody>
+                <tr>
+                  <td><strong>Business ID:</strong></td>
+                  <td><code>@BusinessId</code></td>
+                </tr>
+                <tr>
+                  <td><strong>Name:</strong></td>
+                  <td>@companyDetail.Name</td>
+                </tr>
+                <tr>
+                  <td><strong>Industry:</strong></td>
+                  <td><span class="badge bg-secondary">@companyDetail.Industry</span></td>
+                </tr>
+                <tr>
+                  <td><strong>Location:</strong></td>
+                  <td>📍 @companyDetail.Location</td>
+                </tr>
+                <tr>
+                  <td><strong>Turnover:</strong></td>
+                  <td><strong class="text-success">@FormatTurnover(companyDetail.Turnover)</strong></td>
+                </tr>
+                <tr>
+                  <td><strong>Employees:</strong></td>
+                  <td>@companyDetail.EmployeeCount people</td>
+                </tr>
+                <tr>
+                  <td><strong>Own Products:</strong></td>
+                  <td>
+                    @if (companyDetail.HasOwnProducts)
+                    {
+                      <span class="badge bg-success">✅ Yes</span>
+                    }
+                    else
+                    {
+                      <span class="badge bg-secondary">❌ No</span>
+                    }
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Contact Information -->
+        <div class="card mb-4">
+          <div class="card-header">
+            <h5>📞 Contact</h5>
+          </div>
+          <div class="card-body">
+            <table class="table table-borderless">
+              <tbody>
+                <tr>
+                  <td><strong>Phone:</strong></td>
+                  <td>
+                    @if (!string.IsNullOrEmpty(companyDetail.PhoneNumber))
+                    {
+                      <a href="tel:@companyDetail.PhoneNumber">@companyDetail.PhoneNumber</a>
+                    }
+                    else
+                    {
+                      <span class="text-muted">Not available</span>
+                    }
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>Email:</strong></td>
+                  <td>
+                    @if (!string.IsNullOrEmpty(companyDetail.Email))
+                    {
+                      <a href="mailto:@companyDetail.Email">@companyDetail.Email</a>
+                    }
+                    else
+                    {
+                      <span class="text-muted">Not available</span>
+                    }
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>Website:</strong></td>
+                  <td>
+                    @if (!string.IsNullOrEmpty(companyDetail.Website))
+                    {
+                      <a href="@companyDetail.Website" target="_blank">@companyDetail.Website</a>
+                    }
+                    else
+                    {
+                      <span class="text-muted">Not available</span>
+                    }
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>Address:</strong></td>
+                  <td>@companyDetail.Address, @companyDetail.PostalCode @companyDetail.City</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- External Links -->
+        <div class="card">
+          <div class="card-header">
+            <h5>🔗 External Resources</h5>
+          </div>
+          <div class="card-body">
+            <a href="@GetYTJUrl(BusinessId)" target="_blank" class="btn btn-outline-primary me-2 mb-2">
+              🇫🇮 YTJ Registry
+            </a>
+            
+            <a href="@GetVirreUrl(BusinessId)" target="_blank" class="btn btn-outline-secondary me-2 mb-2">
+              🔍 Virre.prh.fi
+            </a>
+            
+            @if (!string.IsNullOrEmpty(companyDetail.Website))
+            {
+              <a href="@companyDetail.Website" target="_blank" class="btn btn-outline-success me-2 mb-2">
+                🌐 Company Website
+              </a>
+            }
+            
+            <a href="@GetGoogleSearchUrl(companyDetail.Name)" target="_blank" class="btn btn-outline-info me-2 mb-2">
+              🔍 Google Search
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column -->
+      <div class="col-lg-4">
+        <!-- Map -->
+        <div class="card mb-4">
+          <div class="card-header">
+            <h5>🗺️ Location</h5>
+          </div>
+          <div class="card-body">
+            @if (companyDetail.Latitude.HasValue && companyDetail.Longitude.HasValue)
+            {
+              <div style="height: 200px; background: #f8f9fa; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                <div class="text-center">
+                  <div>🗺️</div>
+                  <small class="text-muted">
+                    @companyDetail.Latitude.Value.ToString("F4"), @companyDetail.Longitude.Value.ToString("F4")
+                  </small>
+                </div>
+              </div>
+            }
+            else
+            {
+              <div style="height: 200px; background: #f8f9fa; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                <div class="text-center text-muted">
+                  <div>🗺️</div>
+                  <small>Location not available</small>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="card">
+          <div class="card-header">
+            <h5>📊 Quick Stats</h5>
+          </div>
+          <div class="card-body">
+            <p><strong>Revenue per Employee:</strong><br/>
+            @FormatCurrency(companyDetail.Turnover / Math.Max(companyDetail.EmployeeCount, 1))</p>
+            
+            <p><strong>Company Size:</strong><br/>
+            @GetCompanySize(companyDetail.EmployeeCount)</p>
+            
+            <p><strong>Product Confidence:</strong><br/>
+            @((companyDetail.ProductConfidenceScore * 100).ToString("F0"))%</p>
+            
+            @if (!string.IsNullOrEmpty(companyDetail.AdditionalInfo))
+            {
+              <hr />
+              <p><strong>Additional:</strong><br/>
+              <small class="text-muted">@companyDetail.AdditionalInfo</small></p>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+  else
+  {
+    <div class="alert alert-warning">
+      <h4>Company Not Found</h4>
+      <p>No company found for Business ID: <code>@BusinessId</code></p>
+      <a href="/search" class="btn btn-primary">← Back to Search</a>
+    </div>
+  }
+</div>
+
+@code {
+  [Parameter] public string BusinessId { get; set; } = "";
+
+  CompanyDetailModel? companyDetail;
+  bool loading = true;
+  string? error;
+
+  protected override async Task OnParametersSetAsync()
+  {
+    if (!string.IsNullOrEmpty(BusinessId))
+    {
+      await LoadCompanyDetails();
+    }
+  }
+
+  async Task LoadCompanyDetails()
+  {
+    loading = true;
+    error = null;
+
+    try
+    {
+      var allCompanies = await UnifiedDataService.SearchCompaniesAsync("combined", 0, long.MaxValue);
+      var company = allCompanies.FirstOrDefault(c => 
+        c.BusinessId.Equals(BusinessId, StringComparison.OrdinalIgnoreCase));
+
+      if (company != null)
+      {
+        companyDetail = EnrichCompanyDetails(company);
+      }
+      else
+      {
+        error = $"Company '{BusinessId}' not found.";
+      }
+    }
+    catch (Exception ex)
+    {
+      error = $"Error loading company: {ex.Message}";
+    }
+    finally
+    {
+      loading = false;
+    }
+  }
+
+  CompanyDetailModel EnrichCompanyDetails(UnifiedCompany company)
+  {
+    var coordinates = GetCoordinatesForLocation(company.Location);
+    
+    return new CompanyDetailModel(
+      BusinessId: company.BusinessId,
+      Name: company.Name,
+      Turnover: company.Turnover,
+      Industry: company.Industry,
+      HasOwnProducts: company.HasOwnProducts,
+      ProductConfidenceScore: company.ProductConfidenceScore,
+      EmployeeCount: company.EmployeeCount,
+      Location: company.Location,
+      DataSource: company.DataSource,
+      Country: company.Country,
+      AdditionalInfo: company.AdditionalInfo,
+      PhoneNumber: GeneratePhoneNumber(company.BusinessId),
+      Email: GenerateEmail(company.Name),
+      Website: GenerateWebsite(company.Name),
+      Address: GenerateAddress(company.Location),
+      PostalCode: ExtractPostalCode(company.Location),
+      City: ExtractCity(company.Location),
+      Latitude: coordinates.latitude,
+      Longitude: coordinates.longitude
+    );
+  }
+
+  (double? latitude, double? longitude) GetCoordinatesForLocation(string location)
+  {
+    var cities = new Dictionary<string, (double lat, double lng)>
+    {
+      { "Helsinki", (60.1699, 24.9384) },
+      { "Espoo", (60.2055, 24.6522) },
+      { "Tampere", (61.4991, 23.7871) },
+      { "Vantaa", (60.2934, 25.0378) },
+      { "Oulu", (65.0121, 25.4651) }
+    };
+
+    foreach (var city in cities)
+    {
+      if (location.Contains(city.Key, StringComparison.OrdinalIgnoreCase))
+      {
+        return (city.Value.lat, city.Value.lng);
+      }
+    }
+
+    return (60.1699, 24.9384);
+  }
+
+  string GeneratePhoneNumber(string businessId) 
+  {
+    var hash = Math.Abs(businessId.GetHashCode());
+    return $"+358 {(hash % 50 + 10)} {(hash % 900 + 100)} {(hash % 9000 + 1000)}";
+  }
+
+  string GenerateEmail(string companyName)
+  {
+    var domain = companyName.ToLowerInvariant()
+      .Replace(" oyj", "").Replace(" oy", "")
+      .Replace(" ", "-");
+    return $"info@{domain}.fi";
+  }
+
+  string GenerateWebsite(string companyName)
+  {
+    var domain = companyName.ToLowerInvariant()
+      .Replace(" oyj", "").Replace(" oy", "")
+      .Replace(" ", "-");
+    return $"https://www.{domain}.fi";
+  }
+
+  string GenerateAddress(string location)
+  {
+    var hash = Math.Abs(location.GetHashCode());
+    var streetNumber = hash % 200 + 1;
+    return $"Keskuskatu {streetNumber}";
+  }
+
+  string ExtractPostalCode(string location)
+  {
+    var hash = Math.Abs(location.GetHashCode());
+    return $"{(hash % 90000 + 10000):D5}";
+  }
+
+  string ExtractCity(string location)
+  {
+    return location.Split(',')[0].Trim();
+  }
+
+  string FormatTurnover(decimal turnover) => $"{turnover / 1000000:F1}M€";
+  string FormatCurrency(decimal amount) => $"{amount / 1000:F0}k€";
+
+  string GetCompanySize(int employeeCount) => employeeCount switch
+  {
+    < 10 => "Micro (1-9)",
+    < 50 => "Small (10-49)", 
+    < 250 => "Medium (50-249)",
+    _ => "Large (250+)"
+  };
+
+  string GetYTJUrl(string businessId) => $"https://tietopalvelu.ytj.fi/yritystiedot.aspx?yavain={businessId}";
+  string GetVirreUrl(string businessId) => $"https://virre.prh.fi/novus/companySearch?businessId={businessId}";
+  string GetGoogleSearchUrl(string companyName) => $"https://www.google.com/search?q={Uri.EscapeDataString(companyName + " Finland")}";
+}

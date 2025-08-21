@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using ProspectFinderPro.ApiGateway.Data;
 using ProspectFinderPro.ApiGateway.Models;
+using ProspectFinderPro.ApiGateway.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,6 +17,16 @@ var cs = builder.Configuration.GetConnectionString("DefaultConnection")
 builder.Services.AddDbContext<AppDbContext>(o => o.UseSqlServer(cs));
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+// Add HTTP client for external API calls
+builder.Services.AddHttpClient();
+
+// Register data services for real company data
+builder.Services.AddScoped<YTJDataService>();
+builder.Services.AddScoped<CompanyFactsService>();
+builder.Services.AddScoped<StatisticsFinlandService>();
+builder.Services.AddScoped<AvoinDataService>();
+builder.Services.AddScoped<UnifiedDataService>();
 
 const string CorsPolicy = "pfp";
 builder.Services.AddCors(o => o.AddPolicy(CorsPolicy, p => p.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin()));
@@ -32,18 +43,81 @@ using (var scope = app.Services.CreateScope())
     db.Database.Migrate();
 }
 
-// Haku
+// Real company search using UnifiedDataService
+app.MapGet("/api/companies/search-real",
+    async (UnifiedDataService unifiedService, string dataSource = "avoindata", 
+           decimal? minTurnover = 1000000, decimal? maxTurnover = 50000000, 
+           bool? hasOwnProducts = null, string? sortBy = "turnover", 
+           bool sortDesc = true, int page = 1, int pageSize = 20) =>
+{
+    try 
+    {
+        // Get real companies from external sources
+        var allCompanies = await unifiedService.SearchCompaniesAsync(
+            dataSource, 
+            (long)(minTurnover ?? 1000000), 
+            (long)(maxTurnover ?? 50000000), 
+            hasOwnProducts);
+
+        // Apply sorting
+        var sortedCompanies = sortBy?.ToLowerInvariant() switch
+        {
+            "location" => sortDesc ? allCompanies.OrderByDescending(c => c.Location) : allCompanies.OrderBy(c => c.Location),
+            "employees" or "employeecount" => sortDesc ? allCompanies.OrderByDescending(c => c.EmployeeCount) : allCompanies.OrderBy(c => c.EmployeeCount),
+            "name" => sortDesc ? allCompanies.OrderByDescending(c => c.Name) : allCompanies.OrderBy(c => c.Name),
+            "industry" => sortDesc ? allCompanies.OrderByDescending(c => c.Industry) : allCompanies.OrderBy(c => c.Industry),
+            "turnover" => sortDesc ? allCompanies.OrderByDescending(c => c.Turnover) : allCompanies.OrderBy(c => c.Turnover),
+            _ => allCompanies.OrderByDescending(c => c.Turnover) // Default sorting by turnover desc
+        };
+
+        // Apply pagination
+        var total = sortedCompanies.Count();
+        var items = sortedCompanies
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(c => new {
+                businessId = c.BusinessId, 
+                name = c.Name, 
+                turnover = c.Turnover, 
+                industry = c.Industry,
+                hasOwnProducts = c.HasOwnProducts, 
+                productConfidenceScore = c.ProductConfidenceScore,
+                employeeCount = c.EmployeeCount, 
+                location = c.Location
+            })
+            .ToList();
+
+        return Results.Ok(new { total, page, pageSize, items, sortBy, sortDesc, dataSource });
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem($"Failed to search real companies: {ex.Message}");
+    }
+}).WithName("SearchRealCompanies");
+
+// Demo search (keeps backward compatibility)
 app.MapGet("/api/companies/search",
-    (AppDbContext db, decimal? minTurnover, decimal? maxTurnover, bool? hasOwnProducts, int page = 1, int pageSize = 20) =>
+    (AppDbContext db, decimal? minTurnover, decimal? maxTurnover, bool? hasOwnProducts, 
+     string? sortBy, bool sortDesc = false, int page = 1, int pageSize = 20) =>
 {
     var q = db.Companies.AsQueryable();
     if (minTurnover is > 0) q = q.Where(c => c.Turnover >= minTurnover.Value);
     if (maxTurnover is > 0) q = q.Where(c => c.Turnover <= maxTurnover.Value);
     if (hasOwnProducts.HasValue) q = q.Where(c => c.HasOwnProducts == hasOwnProducts.Value);
 
+    // Apply sorting
+    q = sortBy?.ToLowerInvariant() switch
+    {
+        "location" => sortDesc ? q.OrderByDescending(c => c.Location) : q.OrderBy(c => c.Location),
+        "employees" or "employeecount" => sortDesc ? q.OrderByDescending(c => c.EmployeeCount) : q.OrderBy(c => c.EmployeeCount),
+        "name" => sortDesc ? q.OrderByDescending(c => c.Name) : q.OrderBy(c => c.Name),
+        "industry" => sortDesc ? q.OrderByDescending(c => c.Industry) : q.OrderBy(c => c.Industry),
+        "turnover" => sortDesc ? q.OrderByDescending(c => c.Turnover) : q.OrderBy(c => c.Turnover),
+        _ => q.OrderByDescending(c => c.Turnover) // Default sorting by turnover desc
+    };
+
     var total = q.Count();
-    var items = q.OrderByDescending(c => c.Turnover)
-                 .Skip((page - 1) * pageSize)
+    var items = q.Skip((page - 1) * pageSize)
                  .Take(pageSize)
                  .Select(c => new {
                      c.BusinessId, c.Name, c.Turnover, c.Industry,
@@ -52,7 +126,7 @@ app.MapGet("/api/companies/search",
                  })
                  .ToList();
 
-    return Results.Ok(new { total, page, pageSize, items });
+    return Results.Ok(new { total, page, pageSize, items, sortBy, sortDesc });
 }).WithName("SearchCompanies");
 
 // Clear all data
@@ -64,45 +138,85 @@ app.MapPost("/api/clear-data", (AppDbContext db) =>
     return Results.Ok(new { cleared = count, total = 0 });
 });
 
-// Seed-demo with 20 real Finnish companies (5-10M€ turnover)
+// Seed with thousands of Finnish companies
 app.MapPost("/api/seed-demo", (AppDbContext db) =>
 {
     // Clear existing data first
     db.Companies.RemoveRange(db.Companies);
     db.SaveChanges();
 
-    var realCompanies = new[]
+    var cities = new[] 
     {
-        // Top Finnish companies in 5-10M€ range with own products
-        new Company{ BusinessId="1234567-8", Name="Suomen Terveystalo Oy", Turnover=9_800_000m, Industry="Healthcare Technology", HasOwnProducts=true, ProductConfidenceScore=0.89, Location="Helsinki", EmployeeCount=65 },
-        new Company{ BusinessId="2345678-9", Name="Nordic Machines Oy", Turnover=8_700_000m, Industry="Industrial Machinery", HasOwnProducts=true, ProductConfidenceScore=0.92, Location="Tampere", EmployeeCount=58 },
-        new Company{ BusinessId="3456789-0", Name="Polar Electronics Oy", Turnover=7_300_000m, Industry="Electronics", HasOwnProducts=true, ProductConfidenceScore=0.85, Location="Oulu", EmployeeCount=42 },
-        new Company{ BusinessId="4567890-1", Name="Finnish Forest Tech Oy", Turnover=9_200_000m, Industry="Forest Technology", HasOwnProducts=true, ProductConfidenceScore=0.88, Location="Joensuu", EmployeeCount=72 },
-        new Company{ BusinessId="5678901-2", Name="Arctic Automation Oy", Turnover=6_800_000m, Industry="Automation", HasOwnProducts=true, ProductConfidenceScore=0.83, Location="Rovaniemi", EmployeeCount=39 },
-        new Company{ BusinessId="6789012-3", Name="Turku Maritime Systems Oy", Turnover=8_100_000m, Industry="Marine Technology", HasOwnProducts=true, ProductConfidenceScore=0.91, Location="Turku", EmployeeCount=55 },
-        new Company{ BusinessId="7890123-4", Name="Lahti Energy Solutions Oy", Turnover=7_900_000m, Industry="Energy Technology", HasOwnProducts=true, ProductConfidenceScore=0.86, Location="Lahti", EmployeeCount=48 },
-        new Company{ BusinessId="8901234-5", Name="Vantaa Food Tech Oy", Turnover=6_400_000m, Industry="Food Technology", HasOwnProducts=true, ProductConfidenceScore=0.79, Location="Vantaa", EmployeeCount=45 },
-        new Company{ BusinessId="9012345-6", Name="Kuopio Bio Solutions Oy", Turnover=5_600_000m, Industry="Biotechnology", HasOwnProducts=true, ProductConfidenceScore=0.87, Location="Kuopio", EmployeeCount=33 },
-        new Company{ BusinessId="0123456-7", Name="Jyväskylä Digital Oy", Turnover=9_500_000m, Industry="Digital Solutions", HasOwnProducts=true, ProductConfidenceScore=0.84, Location="Jyväskylä", EmployeeCount=68 },
-        new Company{ BusinessId="1357902-4", Name="Seinäjoki Agri Tech Oy", Turnover=7_700_000m, Industry="Agricultural Technology", HasOwnProducts=true, ProductConfidenceScore=0.82, Location="Seinäjoki", EmployeeCount=51 },
-        new Company{ BusinessId="2468013-5", Name="Pori Steel Works Oy", Turnover=8_900_000m, Industry="Steel Manufacturing", HasOwnProducts=true, ProductConfidenceScore=0.90, Location="Pori", EmployeeCount=76 },
-        new Company{ BusinessId="3579024-6", Name="Vaasa Wind Power Oy", Turnover=9_100_000m, Industry="Renewable Energy", HasOwnProducts=true, ProductConfidenceScore=0.88, Location="Vaasa", EmployeeCount=62 },
-        new Company{ BusinessId="4680135-7", Name="Mikkeli Software House Oy", Turnover=6_200_000m, Industry="Software Development", HasOwnProducts=true, ProductConfidenceScore=0.75, Location="Mikkeli", EmployeeCount=41 },
-        new Company{ BusinessId="5791246-8", Name="Kotka Logistics Tech Oy", Turnover=7_500_000m, Industry="Logistics Technology", HasOwnProducts=true, ProductConfidenceScore=0.81, Location="Kotka", EmployeeCount=54 },
-        new Company{ BusinessId="6802357-9", Name="Hämeenlinna Precision Oy", Turnover=8_300_000m, Industry="Precision Engineering", HasOwnProducts=true, ProductConfidenceScore=0.89, Location="Hämeenlinna", EmployeeCount=59 },
-        new Company{ BusinessId="7913468-0", Name="Kouvola Transport Systems Oy", Turnover=6_900_000m, Industry="Transportation", HasOwnProducts=true, ProductConfidenceScore=0.77, Location="Kouvola", EmployeeCount=47 },
-        new Company{ BusinessId="8024579-1", Name="Lappeenranta Clean Tech Oy", Turnover=8_600_000m, Industry="Clean Technology", HasOwnProducts=true, ProductConfidenceScore=0.93, Location="Lappeenranta", EmployeeCount=64 },
-        new Company{ BusinessId="9135680-2", Name="Savonlinna Tourism Tech Oy", Turnover=5_300_000m, Industry="Tourism Technology", HasOwnProducts=true, ProductConfidenceScore=0.71, Location="Savonlinna", EmployeeCount=29 },
-        new Company{ BusinessId="0246791-3", Name="Rauma Marine Equipment Oy", Turnover=9_400_000m, Industry="Marine Equipment", HasOwnProducts=true, ProductConfidenceScore=0.94, Location="Rauma", EmployeeCount=78 }
+        "Helsinki", "Espoo", "Tampere", "Turku", "Oulu", "Jyväskylä", "Lahti", "Kuopio",
+        "Vantaa", "Joensuu", "Lappeenranta", "Hämeenlinna", "Vaasa", "Pori", "Kotka", "Mikkeli",
+        "Salo", "Kouvola", "Seinäjoki", "Savonlinna", "Rauma", "Rovaniemi", "Kajaani", "Iisalmi",
+        "Pietarsaari", "Raahe", "Tornio", "Imatra", "Valkeakoski", "Hamina", "Forssa", "Lohja"
     };
 
-    foreach (var c in realCompanies)
+    var industries = new[]
     {
-        db.Companies.Add(c);
+        "Technology", "Manufacturing", "Healthcare", "Energy", "Construction", "Food & Beverage",
+        "Automotive", "Electronics", "Software Development", "Biotechnology", "Clean Technology",
+        "Marine Technology", "Forest Technology", "Agricultural Technology", "Tourism Technology",
+        "Logistics Technology", "Digital Solutions", "Industrial Machinery", "Precision Engineering",
+        "Renewable Energy", "Automation", "Transportation", "Steel Manufacturing", "Chemical Industry"
+    };
+
+    var companyTypes = new[] { "Oy", "Oyj", "Ab", "Ky", "T:mi" };
+    var businessPrefixes = new[] 
+    {
+        "Nordic", "Finnish", "Arctic", "Baltic", "Suomen", "Polar", "Northern", "Fenno", "Scandi", 
+        "Euro", "Turbo", "Mega", "Super", "Ultra", "Pro", "Max", "Tech", "Digi", "Smart", "Green"
+    };
+
+    var companies = new List<Company>();
+    var random = new Random(42); // Fixed seed for reproducible results
+
+    // Generate 2500 companies
+    for (int i = 0; i < 2500; i++)
+    {
+        var city = cities[random.Next(cities.Length)];
+        var industry = industries[random.Next(industries.Length)];
+        var companyType = companyTypes[random.Next(companyTypes.Length)];
+        var prefix = businessPrefixes[random.Next(businessPrefixes.Length)];
+        
+        var businessId = $"{random.Next(1000000, 9999999)}-{random.Next(1, 9)}";
+        var name = $"{prefix} {city} {industry} {companyType}";
+        
+        // Generate realistic turnover (500K - 50M EUR)
+        var turnover = (decimal)(random.NextDouble() * 49_500_000 + 500_000);
+        
+        // Estimate employees based on turnover with some randomness
+        var baseEmployees = (int)(turnover / 250_000); // 250k per employee average
+        var employeeCount = Math.Max(1, baseEmployees + random.Next(-5, 15));
+        
+        var hasOwnProducts = random.NextDouble() > 0.4; // 60% have own products
+        var confidenceScore = random.NextDouble() * 0.4 + 0.6; // 0.6-1.0 range
+
+        companies.Add(new Company
+        {
+            BusinessId = businessId,
+            Name = name,
+            Turnover = Math.Round(turnover, 2),
+            Industry = industry,
+            HasOwnProducts = hasOwnProducts,
+            ProductConfidenceScore = Math.Round(confidenceScore, 2),
+            Location = city,
+            EmployeeCount = employeeCount
+        });
     }
+
+    // Add all companies in batches for better performance
+    var batchSize = 100;
+    for (int i = 0; i < companies.Count; i += batchSize)
+    {
+        var batch = companies.Skip(i).Take(batchSize);
+        db.Companies.AddRange(batch);
+    }
+    
     db.SaveChanges();
     var total = db.Companies.Count();
-    return Results.Ok(new { added = realCompanies.Length, total });
+    return Results.Ok(new { added = companies.Count, total });
 });
 
 // Health

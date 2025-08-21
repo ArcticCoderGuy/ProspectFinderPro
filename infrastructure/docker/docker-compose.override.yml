@@ -1,0 +1,45 @@
+# Development overrides for docker-compose.yml
+# This file is automatically loaded by docker compose
+
+version: '3.8'
+
+services:
+  sqlserver:
+    ports:
+      - "1433:1433"
+    volumes:
+      - mssqldata:/var/opt/mssql
+
+  redis:
+    ports:
+      - "6379:6379"
+
+  api-gateway:
+    build:
+      context: ../../
+      dockerfile: src/Services/ProspectFinderPro.ApiGateway/Dockerfile
+      target: development
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+    volumes:
+      - ../../src:/app/src:ro
+    depends_on:
+      - sqlserver
+      - redis
+
+  webapp:
+    build:
+      context: ../../
+      dockerfile: src/Services/ProspectFinderPro.WebApp/Dockerfile
+      target: development  
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+    volumes:
+      - ../../src:/app/src:ro
+    depends_on:
+      - api-gateway
+
+volumes:
+  mssqldata:
